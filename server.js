@@ -1,8 +1,8 @@
 //  OpenShift sample Node application
 var express = require('express'),
   app = express(),
-  morgan = require('morgan')
-Bittrex = require('./src/exchange/Bittrex');
+  morgan = require('morgan'),
+  Bittrex = require('./src/exchange/Bittrex');
 
 Object.assign = require('object-assign')
 
@@ -78,6 +78,27 @@ app.get('/', function (req, res) {
   }
 });
 
+// app.get('/', function (req, res) {
+//   // try to initialize the db on every request if it's not already
+//   // initialized.
+//   if (!db) {
+//     initDb(function (err) { });
+//   }
+//   if (db) {
+//     var col = db.collection('counts');
+//     // Create a document with request IP and current time of request
+//     col.insert({ ip: req.ip, date: Date.now() });
+//     col.count(function (err, count) {
+//       if (err) {
+//         console.log('Error running count. Message:\n' + err);
+//       }
+//       res.render('index.html', { pageCountMessage: count, dbInfo: dbDetails });
+//     });
+//   } else {
+//     res.render('index.html', { pageCountMessage: null });
+//   }
+// });
+
 app.get('/pagecount', function (req, res) {
   // try to initialize the db on every request if it's not already
   // initialized.
@@ -93,26 +114,40 @@ app.get('/pagecount', function (req, res) {
   }
 });
 
-app.get('/bittrex', function (req, res) {
-  let bittrex = new Bittrex();
+let bittrex = null;
+
+function initBittrex() {
+  if(bittrex != null) {
+    return;
+  }
+  bittrex = new Bittrex();
   bittrex.setToken({
     key: '860e7c2d7dad4eafb23520bb608d22a7',
     secret: '93920538862744f4989c9db01b22ca37'
   });
-  bittrex.fetchBalance((coinBalances) => {
-    console.log("~~~~ CoinBalances ~~~~");
-    //console.log(coinBalances);
-    // let totalBTC = 0;
-    // coinBalances.forEach(e => {
-    //   totalBTC += e.BalanceBTC;
-    // });
-    // this.setState({ totalBTC });
+}
 
-    // this.setState({
-    //   details: _.sortBy(coinBalances, 'Currency')
-    // });
-    // this.fetchStatus();
+app.get('/bittrex/balances', function (req, res) {
+  initBittrex();
+  bittrex.fetchBalance((coinBalances) => {
+    // console.log("~~~~ CoinBalances ~~~~");
     res.send(JSON.stringify(coinBalances));
+  });
+});
+
+app.get('/bittrex/openOrder', function (req, res) {
+  initBittrex();
+  bittrex.fetchOpenOrder((result) => {
+    // console.log("~~~~ openOrder ~~~~");
+    res.send(JSON.stringify(result));
+  });
+});
+
+app.get('/bittrex/orderHistory', function (req, res) {
+  initBittrex();
+  bittrex.fetchOrderHistory((result) => {
+    // console.log("~~~~ orderHistory ~~~~");
+    res.send(JSON.stringify(result));
   });
 });
 
@@ -121,6 +156,9 @@ app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(500).send('Something bad happened!');
 });
+
+app.use('/static', express.static(__dirname + '/views/static'))
+app.use('/service-worker.js', express.static(__dirname + '/views/service-worker.js'))
 
 initDb(function (err) {
   console.log('Error connecting to Mongo. Message:\n' + err);
