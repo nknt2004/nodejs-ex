@@ -157,8 +157,9 @@ app.use(function (err, req, res, next) {
   res.status(500).send('Something bad happened!');
 });
 
-app.use('/static', express.static(__dirname + '/build/static'))
-app.use('/service-worker.js', express.static(__dirname + '/build/service-worker.js'))
+app.use('/static', express.static(__dirname + '/views/static'))
+app.use('/service-worker.js', express.static(__dirname + '/views/service-worker.js'))
+app.use('/', express.static(__dirname + '/views'))
 
 initDb(function (err) {
   console.log('Error connecting to Mongo. Message:\n' + err);
